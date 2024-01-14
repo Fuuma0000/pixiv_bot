@@ -3,6 +3,7 @@ import os
 import discord
 from discord.ext import tasks
 from discord import app_commands
+from discord.ext import commands
 import time
 import sqlite3
 from pixivpy3 import AppPixivAPI, PixivError
@@ -142,6 +143,7 @@ async def on_ready():
 
 # idを引数にとって、そのidを表示するコマンド
 @tree.command(name="join", description="pixivのIDを入力してね")
+@commands.is_owner()
 async def show_id(interaction: discord.Interaction, id: int):
     # app-api
     aapi = AppPixivAPI(**_REQUESTS_KWARGS)
@@ -177,6 +179,7 @@ async def show_id(interaction: discord.Interaction, id: int):
 
 
 @tree.command(name="leave", description="pixivのIDを入力してね")
+@commands.is_owner()
 async def delete_id(interaction: discord.Interaction, id: int):
     cur.execute("SELECT * FROM pixiv_data WHERE id=?", (id,))
     existing_entry = cur.fetchone()
@@ -192,6 +195,7 @@ async def delete_id(interaction: discord.Interaction, id: int):
 
 # ユーザ数を表示するコマンド
 @tree.command(name="count", description="登録ユーザ数を表示するよ")
+@commands.is_owner()
 async def show_count(interaction: discord.Interaction):
     cur.execute("SELECT COUNT(*) FROM pixiv_data")
     count = cur.fetchone()[0]
