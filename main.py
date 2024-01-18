@@ -9,6 +9,8 @@ import sqlite3
 from pixivpy3 import AppPixivAPI, PixivError
 from itertools import chain
 from dotenv import load_dotenv
+import random
+
 
 load_dotenv()
 
@@ -129,6 +131,9 @@ def check_new_bookmarks(old_bookmarks, new_bookmarks):
 
 # 新しいブックマークをDiscordに通知する
 async def notify_new_bookmarks(channel, new_bookmarks):
+    # new_bookmarkをランダムに並び替える
+    random.shuffle(new_bookmarks)
+
     for new_bookmark in new_bookmarks:
         await channel.send(f"https://www.pixiv.net/artworks/{new_bookmark}")
 
