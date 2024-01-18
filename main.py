@@ -57,12 +57,14 @@ def get_user_bookmarks(aapi, old_bookmarks):
     for user_id in old_bookmarks_id_list:
         # ユーザーのブックマークページをスクレイピングしてブックマークされている作品IDのリストを取得する処理
         json_result = aapi.user_bookmarks_illust(user_id)
-        artworks_array = []
-        for i in range(10):
-            result_id = json_result.illusts[i]
-            artworks_array.append(result_id.id)
 
-        result_id_data.update({user_id: artworks_array})
+        if json_result and json_result.illusts:
+            artworks_array = []
+            for i in range(10):
+                result_id = json_result.illusts[i]
+                artworks_array.append(result_id.id)
+
+            result_id_data.update({user_id: artworks_array})
 
     return result_id_data
 
@@ -209,34 +211,32 @@ async def loop():
     # botが起動するまで待つ
     await client.wait_until_ready()
 
-    current_time = time.localtime()
-    if current_time.tm_min == 0:
-        # app-api
-        aapi = AppPixivAPI(**_REQUESTS_KWARGS)
+    # app-api
+    aapi = AppPixivAPI(**_REQUESTS_KWARGS)
 
-        _e = None
-        for _ in range(3):
-            try:
-                aapi.auth(refresh_token=_REFRESH_TOKEN)
-                break
-            except PixivError as e:
-                _e = e
-                time.sleep(10)
-        else:  # failed 3 times
-            raise _e
+    _e = None
+    for _ in range(3):
+        try:
+            aapi.auth(refresh_token=_REFRESH_TOKEN)
+            break
+        except PixivError as e:
+            _e = e
+            time.sleep(10)
+    else:  # failed 3 times
+        raise _e
 
-        # 前回のブックマーク情報を取得
-        old_bookmarks = get_old_bookmarks(cur)
-        # 最新のブックマーク情報を取得
-        new_bookmarks = get_user_bookmarks(aapi, old_bookmarks)
-        # 最新のブックマーク情報をDBに保存する
-        save_new_bookmarks(cur, conn, new_bookmarks)
-        # 前回と最新のブックマーク情報を比較する
-        difference_bookmarks = check_new_bookmarks(old_bookmarks, new_bookmarks)
-        # 新しいブックマークがあればDiscordに通知する
-        if difference_bookmarks:
-            channel = client.get_channel(CHANNEL_ID)
-            await notify_new_bookmarks(channel, difference_bookmarks)
+    # 前回のブックマーク情報を取得
+    old_bookmarks = get_old_bookmarks(cur)
+    # 最新のブックマーク情報を取得
+    new_bookmarks = get_user_bookmarks(aapi, old_bookmarks)
+    # 最新のブックマーク情報をDBに保存する
+    save_new_bookmarks(cur, conn, new_bookmarks)
+    # 前回と最新のブックマーク情報を比較する
+    difference_bookmarks = check_new_bookmarks(old_bookmarks, new_bookmarks)
+    # 新しいブックマークがあればDiscordに通知する
+    if difference_bookmarks:
+        channel = client.get_channel(CHANNEL_ID)
+        await notify_new_bookmarks(channel, difference_bookmarks)
 
 
 atexit.register(close_db_connection)
