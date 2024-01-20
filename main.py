@@ -250,8 +250,6 @@ async def loop():
         channel = client.get_channel(CHANNEL_ID)
         await notify_new_bookmarks(channel, difference_bookmarks)
 
-    conn.commit()
-
 
 atexit.register(close_db_connection)
 
