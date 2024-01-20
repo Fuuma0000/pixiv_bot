@@ -29,7 +29,7 @@ dbname = "PIXIV_DB.db"
 conn = sqlite3.connect(dbname)
 cur = conn.cursor()
 
-user_count = Counter("discord_bot_users", "Total number of users")
+user_count = Gauge("discord_bot_users", "Total number of users")
 bot_status = Gauge("discord_bot_status", "Discord Bot Status")
 
 
