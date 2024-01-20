@@ -10,6 +10,7 @@ from pixivpy3 import AppPixivAPI, PixivError
 from itertools import chain
 from dotenv import load_dotenv
 import random
+from prometheus_client import Gauge, start_http_server, Counter
 
 
 load_dotenv()
@@ -17,7 +18,6 @@ load_dotenv()
 # Discord botのトークン
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-# CHANNEL_ID = os.getenv("CHANNEL_ID")
 _REFRESH_TOKEN = os.getenv("REFRESH_TOKEN")
 _REQUESTS_KWARGS = {}
 
@@ -28,6 +28,9 @@ tree = app_commands.CommandTree(client)
 dbname = "PIXIV_DB.db"
 conn = sqlite3.connect(dbname)
 cur = conn.cursor()
+
+user_count = Counter("discord_bot_users", "Total number of users")
+bot_status = Gauge("discord_bot_status", "Discord Bot Status")
 
 
 # もしtableがなければ作成する
@@ -147,6 +150,8 @@ def close_db_connection():
 async def on_ready():
     await tree.sync()
     loop.start()
+    start_http_server(8004)  # Prometheus がスクレイピングするポート番号
+    bot_status.set(1)  # Discord ボットが正常に起動したことを示す
 
 
 # idを引数にとって、そのidを表示するコマンド
@@ -181,6 +186,7 @@ async def show_id(interaction: discord.Interaction, id: int):
         # DBに保存する
         save_new_bookmarks_for_id(cur, conn, id, artworks_array)
         text = f"登録しました"
+        user_count.inc()  # Prometheus カウンターをインクリメント
     else:
         text = f"登録済みです"
     await interaction.response.send_message(text)
@@ -197,6 +203,7 @@ async def delete_id(interaction: discord.Interaction, id: int):
     else:
         cur.execute("DELETE FROM pixiv_data WHERE id=?", (id,))
         conn.commit()
+        user_count.dec()  # Prometheus カウンターをデクリメント
 
     await interaction.response.send_message("削除しました")
 
