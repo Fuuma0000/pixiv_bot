@@ -10,7 +10,7 @@ from pixivpy3 import AppPixivAPI, PixivError
 from itertools import chain
 from dotenv import load_dotenv
 import random
-from prometheus_client import Gauge, start_http_server, Counter
+from prometheus_client import Gauge, start_http_server
 
 
 load_dotenv()
@@ -31,6 +31,7 @@ cur = conn.cursor()
 
 user_count = Gauge("discord_bot_users", "Total number of users")
 bot_status = Gauge("discord_bot_status", "Discord Bot Status")
+notify_counter = Gauge("discord_bot_notify", "Notify Counter")
 
 
 # もしtableがなければ作成する
@@ -214,6 +215,7 @@ async def delete_id(interaction: discord.Interaction, id: int):
 async def show_count(interaction: discord.Interaction):
     cur.execute("SELECT COUNT(*) FROM pixiv_data")
     count = cur.fetchone()[0]
+    user_count.set(count)  # Prometheus カウンターを設定
     await interaction.response.send_message(f"現在の登録ユーザ数は{count}人です")
 
 
@@ -248,6 +250,7 @@ async def loop():
     # 新しいブックマークがあればDiscordに通知する
     if difference_bookmarks:
         channel = client.get_channel(CHANNEL_ID)
+        notify_counter.inc()
         await notify_new_bookmarks(channel, difference_bookmarks)
 
 
