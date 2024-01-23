@@ -21,8 +21,9 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 _REFRESH_TOKEN = os.getenv("REFRESH_TOKEN")
 _REQUESTS_KWARGS = {}
 
-intents = discord.Intents.default()
-client = discord.Client(intents=discord.Intents.all())
+intents = discord.Intents.all()
+intents.typing = False
+client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 dbname = "PIXIV_DB.db"
